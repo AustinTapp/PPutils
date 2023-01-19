@@ -115,7 +115,8 @@ def ReorientToITK(data_dir):
                 dicom_image = DCM_reader.Execute()
 
                 case = list_subfolders_with_paths[i].split("\\")[-1]
-                match = [nifti for nifti in os.listdir(nifti_folder) if 'CT' in nifti and case in nifti]
+                case = case + "_0_CT.nii.gz"
+                match = [nifti for nifti in os.listdir(nifti_folder) if nifti == case]
                 if len(match) > 0:
                     try:
                         nifti_image = sitk.ReadImage(os.path.join(nifti_folder, match[0]))
@@ -178,7 +179,7 @@ if __name__ == '__main__':
     #nifti_folder = DCM2niix(data_dir)
     #rename(nifti_folder)
     #cleanup(nifti_folder)
-    #reoriented_folder = ReorientToITK(data_dir)
+    reoriented_folder = ReorientToITK(data_dir)
     #BedRemoval(data_dir, "D:\\Data\\CNH_Paired\\Reoriented")
 
     DirCheck(original_dir, asNifti_dir)
