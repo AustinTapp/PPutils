@@ -1,13 +1,11 @@
 import os
 import subprocess
-
 import json
 import shutil
-
 import glob
 import time
-
 import SimpleITK as sitk
+from concurrent.futures import ThreadPoolExecutor
 
 def remove_empty_dirs(path):
     for dir_entry in os.scandir(path):
@@ -15,6 +13,7 @@ def remove_empty_dirs(path):
             remove_empty_dirs(dir_entry.path)
             if not os.listdir(dir_entry.path):
                 os.rmdir(dir_entry.path)
+
 
 def DCM2niix(data_dir):
     list_subfolders_with_paths = [f.path for f in os.scandir(data_dir) if f.is_dir()]
@@ -39,8 +38,8 @@ def DCM2niix(data_dir):
                 subprocess.call([DCM2niix] + DCM2niix_args)
     return nifti_folder
 
-def rename():
-    nifti_folder = "D:\\Data\\CNH_Paired\\asNifti"
+
+def rename(nifti_folder):
     jsons = [file for file in os.listdir(nifti_folder) if file.endswith('.json')]
     for file in jsons:
         json_path = os.path.join(nifti_folder, file)
@@ -128,13 +127,39 @@ def ReorientToITK(data_dir):
                     realigned_nifti = elastix.GetResultImage()
 
                     sitk.WriteImage(realigned_nifti, os.path.join(nifti_folder, reoriented_folder, match[0]))
+    return reoriented_folder
+
+def BedRemoval(data_dir, reoriented_folder):
+    remove_bed = "C:\\Users\\Austin Tapp\\Documents\\ImagePreProcessUtils\\BedRemoveFilter\\build\\Debug\\BedRemovalFilter.exe"
+
+    nobed_folder = os.path.join(data_dir, "NoBedCTs")
+    isExist = os.path.exists(nobed_folder)
+    if not isExist:
+        os.makedirs(nobed_folder)
+
+    remove_bed_execs = []
+
+    list_CTs_with_paths = [f.path for f in os.scandir(reoriented_folder)]
+    for i in range(len(list_CTs_with_paths)):
+        nobed = list_CTs_with_paths[i].split("\\")[-1]
+        nobed = nobed.split("_")[0]
+        remove_bed_i = [remove_bed, list_CTs_with_paths[i], os.path.join(nobed_folder, nobed + "_noBed.nii.gz")]
+        remove_bed_execs.append(remove_bed_i)
+
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        results = [executor.submit(subprocess.call, exec) for exec in remove_bed_execs]
+        for f in results:
+            f.result()
+
 
 if __name__ == '__main__':
     data_dir = "D:\\Data\\CNH_Paired"
-    #remove_empty_dirs(data_dir)
-    #nifti_folder = DCM2niix(data_dir)
-    #rename()
-    #cleanup(nifti_folder)
-    ReorientToITK(data_dir)
+    remove_empty_dirs(data_dir)
+    nifti_folder = DCM2niix(data_dir)
+    rename(nifti_folder)
+    cleanup(nifti_folder)
+    reoriented_folder = ReorientToITK(data_dir)
+    BedRemoval(data_dir, "D:\\Data\\CNH_Paired\\Reoriented")
 
+    #TODO bias correction
     print("Done!")
