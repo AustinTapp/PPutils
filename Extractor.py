@@ -117,16 +117,19 @@ def ReorientToITK(data_dir):
                 case = list_subfolders_with_paths[i].split("\\")[-1]
                 match = [nifti for nifti in os.listdir(nifti_folder) if 'CT' in nifti and case in nifti]
                 if len(match) > 0:
-                    nifti_image = sitk.ReadImage(os.path.join(nifti_folder, match[0]))
+                    try:
+                        nifti_image = sitk.ReadImage(os.path.join(nifti_folder, match[0]))
 
-                    elastix = sitk.ElastixImageFilter()
-                    elastix.SetFixedImage(dicom_image)
-                    elastix.SetMovingImage(nifti_image)
-                    elastix.SetParameterMap(sitk.GetDefaultParameterMap("rigid"))
-                    elastix.Execute()
-                    realigned_nifti = elastix.GetResultImage()
+                        elastix = sitk.ElastixImageFilter()
+                        elastix.SetFixedImage(dicom_image)
+                        elastix.SetMovingImage(nifti_image)
+                        elastix.SetParameterMap(sitk.GetDefaultParameterMap("rigid"))
+                        elastix.Execute()
+                        realigned_nifti = elastix.GetResultImage()
 
-                    sitk.WriteImage(realigned_nifti, os.path.join(nifti_folder, reoriented_folder, match[0]))
+                        sitk.WriteImage(realigned_nifti, os.path.join(nifti_folder, reoriented_folder, match[0]))
+                    except RuntimeError:
+                        continue
     return reoriented_folder
 
 def BedRemoval(data_dir, reoriented_folder):
@@ -151,15 +154,34 @@ def BedRemoval(data_dir, reoriented_folder):
         for f in results:
             f.result()
 
+def DirCheck(first, second):
+    count = 0
+    firstfiles = os.listdir(first)
+    secondfiles = os.listdir(second)
+    for file in secondfiles:
+        file = file.split("_")[0]
+        #if 'CT' in file:
+        if file not in firstfiles:
+            print(file)
+            count += 1
+    print(count)
+
 
 if __name__ == '__main__':
     data_dir = "D:\\Data\\CNH_Paired"
-    remove_empty_dirs(data_dir)
-    nifti_folder = DCM2niix(data_dir)
-    rename(nifti_folder)
-    cleanup(nifti_folder)
-    reoriented_folder = ReorientToITK(data_dir)
-    BedRemoval(data_dir, "D:\\Data\\CNH_Paired\\Reoriented")
+    original_dir = "D:\\Data\\CNH_Paired\\Normal"
+    asNifti_dir = "D:\\Data\\CNH_Paired\\asNifti"
+    reoriented_dir = "D:\\Data\\CNH_Paired\\Reoriented"
+    noBed_dir = "D:\\Data\\CNH_Paired\\NoBedCTs"
+
+    #remove_empty_dirs(data_dir)
+    #nifti_folder = DCM2niix(data_dir)
+    #rename(nifti_folder)
+    #cleanup(nifti_folder)
+    #reoriented_folder = ReorientToITK(data_dir)
+    #BedRemoval(data_dir, "D:\\Data\\CNH_Paired\\Reoriented")
+
+    DirCheck(original_dir, asNifti_dir)
 
     #TODO bias correction
     print("Done!")
