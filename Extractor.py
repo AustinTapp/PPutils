@@ -19,6 +19,8 @@ def DCM2niix(data_dir):
     list_subfolders_with_paths = [f.path for f in os.scandir(data_dir) if f.is_dir()]
     DCM2niix = "C:\\Users\\Austin Tapp\\Documents\\ImagePreProcessUtils\\dcm2niix\\build\\install\\bin\\dcm2niix.exe"
 
+    DCM2niix_execs = []
+
     for i in range(len(list_subfolders_with_paths)):
         nifti_folder = os.path.join(data_dir, "asNifti")
         # print(nifti_folder)
@@ -30,12 +32,17 @@ def DCM2niix(data_dir):
             # print(patient_subfolder_with_path[j].split('\\')[-1])
             patient_scanfiles_with_path = [f.path for f in os.scandir(patient_subfolder_with_path[j]) if f.is_dir()]
             for l in range(len(patient_scanfiles_with_path)):
-                DCM2niix_args = ['-o', nifti_folder, '-f',
+                DCM2niix_i = [DCM2niix, '-o', nifti_folder, '-f',
                                  patient_subfolder_with_path[j].split("\\")[-1] + "_" + str(l),
                                  '-z', 'y', '-9',
                                  patient_scanfiles_with_path[l]]
+                DCM2niix_execs.append(DCM2niix_i)
                 # print(patient_imagefiles_with_path[k])
-                subprocess.call([DCM2niix] + DCM2niix_args)
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        results = [executor.submit(subprocess.call, exec) for exec in DCM2niix_execs]
+        for f in results:
+            f.result()
+
     return nifti_folder
 
 
@@ -53,7 +60,15 @@ def rename(nifti_folder):
             except FileNotFoundError:
                 continue
             try:
+                shutil.move(os.path.join(nifti_folder, base_name.split('\\')[-1]+"_Eq_1.nii.gz"), base_name+"_CT.nii.gz")
+            except FileNotFoundError:
+                continue
+            try:
                 shutil.move(os.path.join(nifti_folder, base_name.split('\\')[-1]+"_Tilt_1.nii.gz"), base_name+"_CT.nii.gz")
+            except FileNotFoundError:
+                continue
+            try:
+                shutil.move(os.path.join(nifti_folder, base_name.split('\\')[-1]+"_Tilt_Eq_1.nii.gz"), base_name+"_CT.nii.gz")
             except FileNotFoundError:
                 continue
         if data[key] == 'MR':
@@ -170,19 +185,19 @@ def DirCheck(first, second):
 
 if __name__ == '__main__':
     data_dir = "D:\\Data\\CNH_Paired"
-    original_dir = "D:\\Data\\CNH_Paired\\Normal"
-    asNifti_dir = "D:\\Data\\CNH_Paired\\asNifti"
-    reoriented_dir = "D:\\Data\\CNH_Paired\\Reoriented"
-    noBed_dir = "D:\\Data\\CNH_Paired\\NoBedCTs"
+    # original_dir = "D:\\Data\\CNH_Paired\\Normal"
+    # asNifti_dir = "D:\\Data\\CNH_Paired\\asNifti"
+    # reoriented_dir = "D:\\Data\\CNH_Paired\\Reoriented"
+    # noBed_dir = "D:\\Data\\CNH_Paired\\NoBedCTs"
 
-    #remove_empty_dirs(data_dir)
-    #nifti_folder = DCM2niix(data_dir)
-    #rename(nifti_folder)
-    #cleanup(nifti_folder)
+    remove_empty_dirs(data_dir)
+    nifti_folder = DCM2niix(data_dir)
+    rename(nifti_folder)
+    cleanup(nifti_folder)
     reoriented_folder = ReorientToITK(data_dir)
-    #BedRemoval(data_dir, "D:\\Data\\CNH_Paired\\Reoriented")
+    BedRemoval(data_dir, "D:\\Data\\CNH_Paired\\Reoriented")
 
-    DirCheck(original_dir, asNifti_dir)
+    #DirCheck(original_dir, asNifti_dir)
 
     #TODO bias correction
     print("Done!")
