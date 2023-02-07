@@ -38,6 +38,7 @@ https://nipype.readthedocs.io/en/0.12.1/interfaces/generated/nipype.interfaces.b
 
 Use FSL FLIRT (fsl5.0-flirt -dof 6 -cost mutualinfo -omat $sub"mat" -in $sub".resamp.n4.nii.gz" -ref Template/Age_matched_Template -out $sub".flirt3";)
 https://nipype.readthedocs.io/en/0.12.1/interfaces/generated/nipype.interfaces.fsl.preprocess.html#flirt
+Templates added
 
 6) Apply the transform output of step 5 to the corrected data (output of 3/input of 4)
 Done with sitk or ITK
