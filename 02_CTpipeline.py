@@ -4,6 +4,8 @@ import SimpleITK as sitk
 import warnings
 from concurrent.futures import ThreadPoolExecutor
 
+#step 2 (equivalent to MRIpipeline)
+#should be run AFTER PPall pipeline
 
 def ReorientToITK(data_dir):
     reoriented_folder = os.path.join(data_dir, "Reoriented")
@@ -25,14 +27,14 @@ def ReorientToITK(data_dir):
             modality = single_dcm.GetMetaData('0008|0060')
 
             if modality == 'CT':
-                ReorientCT(patient_subfolder_with_path[j], list_subfolders_with_paths[i], nifti_folder, reoriented_folder)
+                applyReorientCT(patient_subfolder_with_path[j], list_subfolders_with_paths[i], nifti_folder, reoriented_folder)
             else:
                 continue
 
     return reoriented_folder
 
 
-def ReorientCT(patient_subfolder_path, list_subfolders_path, nifti_folder, reoriented_folder):
+def applyReorientCT(patient_subfolder_path, list_subfolders_path, nifti_folder, reoriented_folder):
     DCMfiles_path = patient_subfolder_path
     DCM_reader = sitk.ImageSeriesReader()
     dicom_names = DCM_reader.GetGDCMSeriesFileNames(DCMfiles_path)
