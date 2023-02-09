@@ -5,11 +5,14 @@ import shutil
 from concurrent.futures import ThreadPoolExecutor
 
 def remove_empty_dirs(path):
+    count = 0
     for dir_entry in os.scandir(path):
         if dir_entry.is_dir():
             remove_empty_dirs(dir_entry.path)
             if not os.listdir(dir_entry.path):
                 os.rmdir(dir_entry.path)
+                count += 1
+    return count
 
 
 def DCM2niix(data_dir):
@@ -55,19 +58,19 @@ def rename(nifti_folder):
             try:
                 os.rename(os.path.join(nifti_folder, base_name.split('\\')[-1]+".nii.gz"), base_name+"_CT.nii.gz")
             except FileNotFoundError:
-                continue
+                pass
             try:
                 shutil.move(os.path.join(nifti_folder, base_name.split('\\')[-1]+"_Eq_1.nii.gz"), base_name+"_CT.nii.gz")
             except FileNotFoundError:
-                continue
+                pass
             try:
                 shutil.move(os.path.join(nifti_folder, base_name.split('\\')[-1]+"_Tilt_1.nii.gz"), base_name+"_CT.nii.gz")
             except FileNotFoundError:
-                continue
+                pass
             try:
                 shutil.move(os.path.join(nifti_folder, base_name.split('\\')[-1]+"_Tilt_Eq_1.nii.gz"), base_name+"_CT.nii.gz")
             except FileNotFoundError:
-                continue
+                pass
         if data[key] == 'MR':
             base_name, ext = os.path.splitext(json_path)
             FLAIRss = "FLAIR"
@@ -77,17 +80,32 @@ def rename(nifti_folder):
                 try:
                     os.rename(os.path.join(nifti_folder, base_name.split('\\')[-1] + ".nii.gz"), base_name + "_FLAIR.nii.gz")
                 except FileNotFoundError:
-                    continue
+                    pass
             if T2ss in check_modality and FLAIRss not in check_modality:
-                try:
-                    os.rename(os.path.join(nifti_folder, base_name.split('\\')[-1] + ".nii.gz"), base_name + "_T2.nii.gz")
-                except FileNotFoundError:
-                    continue
+                if base_name.endswith("_e1"):
+                    b_name = base_name.split('\\')[-1]
+                    try:
+                        shutil.move(os.path.join(nifti_folder, base_name.split('\\')[-1] + ".nii.gz"),
+                                    os.path.join(nifti_folder, b_name.split("_")[0] + "_" + b_name.split("_")[1] + "_T2.nii.gz"))
+                    except FileNotFoundError:
+                        pass
+                if base_name.endswith("_e2"):
+                    b_name = base_name.split('\\')[-1]
+                    try:
+                        shutil.move(os.path.join(nifti_folder, base_name.split('\\')[-1] + ".nii.gz"),
+                                    os.path.join(nifti_folder, b_name.split("_")[0] + "_" + b_name.split("_")[1] + "_T2.nii.gz"))
+                    except FileNotFoundError:
+                        pass
+                else:
+                    try:
+                        os.rename(os.path.join(nifti_folder, base_name.split('\\')[-1] + ".nii.gz"), base_name + "_T2.nii.gz")
+                    except FileNotFoundError:
+                        pass
             else:
                 try:
                     os.rename(os.path.join(nifti_folder, base_name.split('\\')[-1] + ".nii.gz"), base_name + "_T1.nii.gz")
                 except FileNotFoundError:
-                    continue
+                    pass
 
 
 def cleanup(nifti_folder):
@@ -111,8 +129,10 @@ def DirCheck(first, second):
 
 
 if __name__ == '__main__':
-    data_dir = "D:\\Data\\CNH_Pair_Test"
-    remove_empty_dirs(data_dir)
+    data_dir = "D:\\Data\\IFA"
+    emptys = remove_empty_dirs(data_dir)
+    print(f"{emptys} directories removed")
+
     asNifti_dir = DCM2niix(data_dir)
     rename(asNifti_dir)
     cleanup(asNifti_dir)

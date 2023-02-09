@@ -58,7 +58,7 @@ def applyReorientCT(patient_subfolder_path, list_subfolders_path, nifti_folder, 
             sitk.WriteImage(realigned_nifti, os.path.join(nifti_folder, reoriented_folder, match[0]))
         except RuntimeError as e:
             warnings.warn(str(e))
-    return
+    return 0
 
 
 def BedRemoval(data_dir, reoriented_folder):
@@ -99,7 +99,7 @@ def DirCheck(first, second):
 
 
 if __name__ == '__main__':
-    data_dir = "D:\\Data\\CNH_Paired"
+    data_dir = "D:\\Data\\CNH_Pair_Test"
 
     # original_dir = "D:\\Data\\CNH_Paired\\Normal"
     # asNifti_dir = "D:\\Data\\CNH_Paired\\asNifti"
