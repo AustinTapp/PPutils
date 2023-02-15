@@ -85,7 +85,8 @@ if __name__ == '__main__':
     '''This script is unfortunately unused: 
     even though we are using literally the exact same transform the slicer one works better for some reason
     there are a number of 'defaults' in Slicer that are improving performance. Adjustments would take much too long
-    once a CT skull segmentation is obtained from noBed CTs, the segmentation may be adapted to the SlicerElastix TFM'''
+    once a CT skull segmentation is obtained from noBed CTs, the segmentation may be adapted to the SlicerElastix TFM
+    Maybe editing the slicerElastix extension will be beneficial later on...'''
 
     #DirCheck(original_dir, asNifti_dir)
     print("Done!")

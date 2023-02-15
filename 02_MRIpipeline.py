@@ -8,6 +8,7 @@ from nipype.interfaces.ants import N4BiasFieldCorrection
 import numpy as np
 #step 2 (equivalent to CTpipeline)
 #should be run AFTER PPall pipeline
+#can probably go before CTpipeline because most is processed on Linux SS
 
 '''
 Note there is an FSL preprocessing course at: https://open.win.ox.ac.uk/pages/fslcourse/website/
@@ -163,7 +164,7 @@ def TransformMRIs(data_dir, bias_dir):
 
     script = os.path.join(registered_dir, "script.sh")
     with open(script, 'w') as f:
-        f.write('echo Running FSL FLIRT....')
+        f.write('echo Running FSL FLIRT....\n')
         for command in FLT_cmdline_execs_list:
             f.write(f'{command} \n')
 
@@ -219,8 +220,8 @@ def DirCheck(first, second):
 
 
 if __name__ == '__main__':
-    data_dir = "D:\\Data\\CNH_Pair_Test"
-    asNifti_dir = "D:\\Data\\CNH_Pair_Test\\asNifti"
+    data_dir = "D:\\Data\\CNH_Paired"
+    asNifti_dir = "D:\\Data\\CNH_Paired\\asNifti"
 
     #bias_dir = "D:\\Data\\CNH_Pair_Test\\B4CorrectedMRI"
     #skull_strip_dir = "D:\\Data\\CNH_Pair_Test\\skullStrippedMRIs"

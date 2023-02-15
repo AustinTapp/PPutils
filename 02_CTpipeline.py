@@ -6,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 #step 2 (equivalent to MRIpipeline)
 #should be run AFTER PPall pipeline
+#takes longer, so should be run third while MRI pipeline works on linux
 
 def ReorientToITK(data_dir):
     reoriented_folder = os.path.join(data_dir, "Reoriented")
