@@ -111,3 +111,4 @@ if __name__ == '__main__':
 
     #DirCheck(original_dir, asNifti_dir)
     print("Done!")
+    print("Now you should obtain the segmentations with CTimage...")

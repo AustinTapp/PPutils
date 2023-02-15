@@ -5,9 +5,7 @@ import subprocess
 import SimpleITK as sitk
 from concurrent.futures import ThreadPoolExecutor
 from nipype.interfaces.ants import N4BiasFieldCorrection
-from nipype.interfaces import brainsuite
-from nipype.interfaces import fsl
-
+import numpy as np
 #step 2 (equivalent to CTpipeline)
 #should be run AFTER PPall pipeline
 
@@ -35,6 +33,7 @@ https://antspy.readthedocs.io/en/latest/_modules/ants/utils/bias_correction.html
 
 4) Skull Stripping - Brainsuite
 https://nipype.readthedocs.io/en/1.8.5/api/generated/nipype.interfaces.brainsuite.brainsuite.html#bse
+# this does not seem to help aside from alignment, but application of the same matrix to a CT does not work
 
 5) Linear Transform (is template dependent: https://docs.google.com/document/d/1yH9umzKXfmwFrjXzhNZqUqFKMkQzXCMyaoVbdLcl76M/edit)
 
@@ -101,36 +100,36 @@ def BiasCorrect(reoriented_dir):
     return B4corrected_folder
 
 
-'''def SkullStrip(bias_corrected):
+'''def SkullStrip(data_dir, bias_corrected):
     skull_stripped_dir = os.path.join(data_dir, "skullStrippedMRIs")
     isExist = os.path.exists(skull_stripped_dir)
     if not isExist:
         os.makedirs(skull_stripped_dir)
 
-    bse = brainsuite.Bse()
-    bse.noRotate = True
-    bse_cmdline_execs_list = []
+    SS_cme = []
+    Brainsuite_Coritcal_extraction = "~/BrainSuite21a/bin/ce_edit.sh"
 
-    for filename in os.listdir(bias_corrected):
-        if filename.endswith("T1.nii.gz"):
-            bse.inputs.inputMRIFile = filename
-            bse.inputs.outputCortexFile = os.path.join(skull_stripped_dir, filename.split('.')[0] + "_Cortex.nii.gz")
-            bse.inputs.outputDetailedBrainMask = os.path.join(skull_stripped_dir, filename.split('.')[0 + "_BrainMask.nii.gz")
-            bse.inputs.outputDiffusionFilter = os.path.join(skull_stripped_dir, filename.split('.')[0] + "_DiffusionFilter.nii.gz")
-            bse.inputs.outputEdgeMap = os.path.join(skull_stripped_dir, filename.split('.')[0] + "_EdgeMap.nii.gz")
-            bse.inputs.outputMRIVolume = os.path.join(skull_stripped_dir, filename.split('.')[0] + "_MRIVolume.nii.gz")
-            bse.inputs.outputMaskFile = os.path.join(skull_stripped_dir, filename.split('.')[0] + "_MaskFile.nii.gz")
+    t1_filenames = [f for f in os.listdir(bias_corrected) if "T1" in f and f.endswith(".nii.gz")]
+    for filename in t1_filenames:
+        ss_cmd = Brainsuite_Coritcal_extraction + " " + filename
+        shutil.copy(os.path.join(bias_corrected, filename), os.path.join(skull_stripped_dir, filename))
+        SS_cme.append(ss_cmd)
 
-            bse_cmdline_execs_list.append(bse.cmdline)
+    #handle errors with the executable file below, also, save mask, use mask for rigid then deformable elastix (parameters are in the elastix extension folder)
+    print("\nIt is necessary to move the script file and all dependent files to your Linux SSL!")
+    print(f"You should be able to copy everything from the folder {skull_stripped_dir}")
+    print("After, 1) 'cd' to the folder, 2)'dos2unix script.sh', 3)'chmod +x script.sh' and run with 4)'bash script.sh'\n")
 
-            with ThreadPoolExecutor(max_workers=5) as executor:
-                results = [executor.submit(subprocess.call, exec) for exec in bse_cmdline_execs_list]
-                for f in results:
-                    f.result()
+
+    script = os.path.join(skull_stripped_dir, "script.sh")
+    with open(script, 'w') as f:
+        for command in SS_cme:
+            f.write(f'{command} \n')
+
     return skull_stripped_dir'''
 
 
-def Transform(data_dir, bias_corrected):
+def TransformMRIs(data_dir, bias_dir):
     registered_dir = os.path.join(data_dir, "toTemplateMRIs")
     isExist = os.path.exists(registered_dir)
     if not isExist:
@@ -140,16 +139,7 @@ def Transform(data_dir, bias_corrected):
 
     flirt_base = "flirt -in input.nii.gz -ref ref.nii -out output.nii.gz -omat matrix.mat -searchcost mutualinfo -dof 6 -interp sinc"
 
-    for filename in os.listdir(bias_corrected):
-        if "T1" in filename:
-            flirt_cmd = flirt_base
-            flirt_cmd = flirt_cmd.replace("ref.nii", "nihpd_asym_00-02_t1w.nii")
-            flirt_cmd = flirt_cmd.replace("input.nii.gz", filename)
-            flirt_cmd = flirt_cmd.replace("output.nii.gz", filename.split('.')[0] + '_FLT.nii.gz')
-            flirt_cmd = flirt_cmd.replace("matrix.mat", filename.split('.')[0] + '_FLT_mat.mat')
-            FLT_cmdline_execs_list.append(flirt_cmd)
-            shutil.copy(os.path.join(bias_corrected, filename), os.path.join(registered_dir, filename))
-
+    for filename in os.listdir(bias_dir):
         if "T2" in filename:
             flirt_cmd = flirt_base
             flirt_cmd = flirt_cmd.replace("ref.nii", "nihpd_asym_00-02_t2w.nii")
@@ -157,13 +147,22 @@ def Transform(data_dir, bias_corrected):
             flirt_cmd = flirt_cmd.replace("output.nii.gz", filename.split('.')[0] + '_FLT.nii.gz')
             flirt_cmd = flirt_cmd.replace("matrix.mat", filename.split('.')[0] + '_FLT_mat.mat')
             FLT_cmdline_execs_list.append(flirt_cmd)
-            shutil.copy(os.path.join(bias_corrected, filename), os.path.join(registered_dir, filename))
+            shutil.copy(os.path.join(bias_dir, filename), os.path.join(registered_dir, filename))
+        if "T1" in filename:
+            flirt_cmd = flirt_base
+            flirt_cmd = flirt_cmd.replace("ref.nii", "nihpd_asym_00-02_t1w.nii")
+            flirt_cmd = flirt_cmd.replace("input.nii.gz", filename)
+            flirt_cmd = flirt_cmd.replace("output.nii.gz", filename.split('.')[0] + '_FLT.nii.gz')
+            flirt_cmd = flirt_cmd.replace("matrix.mat", filename.split('.')[0] + '_FLT_mat.tfm')
+            FLT_cmdline_execs_list.append(flirt_cmd)
+            shutil.copy(os.path.join(bias_dir, filename), os.path.join(registered_dir, filename))
 
     shutil.copy("ReferenceMRIs\\0_2yo\\nihpd_asym_00-02_t1w.nii", os.path.join(registered_dir, "nihpd_asym_00-02_t1w.nii"))
     shutil.copy("ReferenceMRIs\\0_2yo\\nihpd_asym_00-02_t2w.nii", os.path.join(registered_dir, "nihpd_asym_00-02_t2w.nii"))
 
     script = os.path.join(registered_dir, "script.sh")
     with open(script, 'w') as f:
+        f.write('echo Running FSL FLIRT....')
         for command in FLT_cmdline_execs_list:
             f.write(f'{command} \n')
 
@@ -171,6 +170,38 @@ def Transform(data_dir, bias_corrected):
     print(f"You should be able to copy everything from the folder {registered_dir}")
     print("After, 1) 'cd' to the folder, 2)'dos2unix script.sh', 3)'chmod +x script.sh' and run with 4)'bash script.sh'")
     return registered_dir
+
+
+def TransformMasks(skull, flirt):
+
+    image_files = [f for f in os.listdir(skull) if f.endswith("mask.nii.gz")]
+
+    for mask in image_files:
+        image_base_name = mask.split(".")[0]
+
+        transform_file = image_base_name + "_bse_FLT_mat.tfm"
+        transform_path = os.path.join(flirt, transform_file)
+        if os.path.exists(transform_path):
+
+            with open(transform_path, 'r') as f:
+                transform_text = f.read()
+            transform_matrix = np.fromstring(transform_text, sep=' ')
+            f.close()
+
+            image_path = os.path.join(skull, mask)
+            image = sitk.ReadImage(image_path)
+
+            transform = sitk.Euler3DTransform()
+            transform.SetParameters(transform_matrix.tolist())
+            fitted = sitk.ReadImage(os.path.join(flirt, image_base_name + "_bse_FLT.nii.gz"))
+            transformed_image = sitk.Resample(image, transform, sitk.sitkLinear, 0.0, image.GetPixelID())
+            transformed_image.SetOrigin(fitted.GetOrigin())
+            transformed_image.SetSpacing(fitted.GetSpacing())
+            transformed_image.SetDirection(fitted.GetDirection())
+
+            output_file = image_base_name + "_mask_transformed.nii.gz"
+            output_path = os.path.join(flirt, output_file)
+            sitk.WriteImage(transformed_image, output_path)
 
 
 def DirCheck(first, second):
@@ -190,10 +221,17 @@ if __name__ == '__main__':
     data_dir = "D:\\Data\\CNH_Pair_Test"
     asNifti_dir = "D:\\Data\\CNH_Pair_Test\\asNifti"
     bias_dir = "D:\\Data\\CNH_Pair_Test\\B4CorrectedMRI"
+    #skull_strip_dir = "D:\\Data\\CNH_Pair_Test\\skullStrippedMRIs"
+    flirt_dir = "D:\\Data\\CNH_Pair_Test\\toTemplateMRIs"
 
     #resample_dir = Resample(data_dir, asNifti_dir)
     #bias_dir = BiasCorrect(resample_dir)
-    #skull_strip_dir = SkullStrip(bias_dir)
-    Transform(data_dir, bias_dir)
+    #skull_strip_dir = SkullStrip(data_dir, bias_dir)
+    #print("Run the skull stripping on T1 first, then press enter to continue with the alignment process...")
+    #input("Press enter to continue!")
+
+    TransformMRIs(data_dir, bias_dir)
+
+    #TransformMasks(skull_strip_dir, flirt_dir)
     #DirCheck(original_dir, asNifti_dir)
     print("Done!")
