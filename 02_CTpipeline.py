@@ -52,6 +52,7 @@ def applyReorientCT(patient_subfolder_path, list_subfolders_path, nifti_folder, 
             elastix.SetFixedImage(dicom_image)
             elastix.SetMovingImage(nifti_image)
             elastix.SetParameterMap(sitk.GetDefaultParameterMap("rigid"))
+            elastix.LogToConsoleOff()
             elastix.Execute()
             realigned_nifti = elastix.GetResultImage()
 
@@ -99,12 +100,7 @@ def DirCheck(first, second):
 
 
 if __name__ == '__main__':
-    data_dir = "D:\\Data\\CNH_Pair_Test"
-
-    # original_dir = "D:\\Data\\CNH_Paired\\Normal"
-    # asNifti_dir = "D:\\Data\\CNH_Paired\\asNifti"
-    # reoriented_dir = "D:\\Data\\CNH_Paired\\Reoriented"
-    # noBed_dir = "D:\\Data\\CNH_Paired\\NoBedCTs"
+    data_dir = "D:\\Data\\CNH_Paired"
 
     reoriented_folder = ReorientToITK(data_dir)
     BedRemoval(data_dir, reoriented_folder)

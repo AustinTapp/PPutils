@@ -100,6 +100,7 @@ def BiasCorrect(reoriented_dir):
     return B4corrected_folder
 
 
+#skull strip was removed because downstream CT to T1 registration suffered
 '''def SkullStrip(data_dir, bias_corrected):
     skull_stripped_dir = os.path.join(data_dir, "skullStrippedMRIs")
     isExist = os.path.exists(skull_stripped_dir)
@@ -145,7 +146,7 @@ def TransformMRIs(data_dir, bias_dir):
             flirt_cmd = flirt_cmd.replace("ref.nii", "nihpd_asym_00-02_t2w.nii")
             flirt_cmd = flirt_cmd.replace("input.nii.gz", filename)
             flirt_cmd = flirt_cmd.replace("output.nii.gz", filename.split('.')[0] + '_FLT.nii.gz')
-            flirt_cmd = flirt_cmd.replace("matrix.mat", filename.split('.')[0] + '_FLT_mat.mat')
+            flirt_cmd = flirt_cmd.replace("matrix.mat", filename.split('.')[0] + '_FLTmat.tfm')
             FLT_cmdline_execs_list.append(flirt_cmd)
             shutil.copy(os.path.join(bias_dir, filename), os.path.join(registered_dir, filename))
         if "T1" in filename:
@@ -153,7 +154,7 @@ def TransformMRIs(data_dir, bias_dir):
             flirt_cmd = flirt_cmd.replace("ref.nii", "nihpd_asym_00-02_t1w.nii")
             flirt_cmd = flirt_cmd.replace("input.nii.gz", filename)
             flirt_cmd = flirt_cmd.replace("output.nii.gz", filename.split('.')[0] + '_FLT.nii.gz')
-            flirt_cmd = flirt_cmd.replace("matrix.mat", filename.split('.')[0] + '_FLT_mat.tfm')
+            flirt_cmd = flirt_cmd.replace("matrix.mat", filename.split('.')[0] + '_FLTmat.tfm')
             FLT_cmdline_execs_list.append(flirt_cmd)
             shutil.copy(os.path.join(bias_dir, filename), os.path.join(registered_dir, filename))
 
@@ -220,17 +221,18 @@ def DirCheck(first, second):
 if __name__ == '__main__':
     data_dir = "D:\\Data\\CNH_Pair_Test"
     asNifti_dir = "D:\\Data\\CNH_Pair_Test\\asNifti"
-    bias_dir = "D:\\Data\\CNH_Pair_Test\\B4CorrectedMRI"
-    #skull_strip_dir = "D:\\Data\\CNH_Pair_Test\\skullStrippedMRIs"
-    flirt_dir = "D:\\Data\\CNH_Pair_Test\\toTemplateMRIs"
 
-    #resample_dir = Resample(data_dir, asNifti_dir)
-    #bias_dir = BiasCorrect(resample_dir)
+    #bias_dir = "D:\\Data\\CNH_Pair_Test\\B4CorrectedMRI"
+    #skull_strip_dir = "D:\\Data\\CNH_Pair_Test\\skullStrippedMRIs"
+    #flirt_dir = "D:\\Data\\CNH_Pair_Test\\toTemplateMRIs"
+
+    resample_dir = Resample(data_dir, asNifti_dir)
+    bias_dir = BiasCorrect(resample_dir)
     #skull_strip_dir = SkullStrip(data_dir, bias_dir)
     #print("Run the skull stripping on T1 first, then press enter to continue with the alignment process...")
     #input("Press enter to continue!")
 
-    TransformMRIs(data_dir, bias_dir)
+    flirt_dir = TransformMRIs(data_dir, bias_dir)
 
     #TransformMasks(skull_strip_dir, flirt_dir)
     #DirCheck(original_dir, asNifti_dir)

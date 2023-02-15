@@ -75,14 +75,17 @@ def CTtoT1(CTs, MRs, data_dir):
     return registered_toMRI
 
 if __name__ == '__main__':
+
     data_dir = "D:\\Data\\CNH_Pair_Test"
     NoBedCTs_dir = os.path.join(data_dir, "NoBedCTs")
     MRItotemplate_dir = os.path.join(data_dir, "toTemplateMRIs")
 
     #to the template registered MRI
-    toMRI_dir = CTtoT1(NoBedCTs_dir, MRItotemplate_dir, data_dir)
+    #toMRI_dir = CTtoT1(NoBedCTs_dir, MRItotemplate_dir, data_dir)
+    '''This script is unfortunately unused: 
+    even though we are using literally the exact same transform the slicer one works better for some reason
+    there are a number of 'defaults' in Slicer that are improving performance. Adjustments would take much too long
+    once a CT skull segmentation is obtained from noBed CTs, the segmentation may be adapted to the SlicerElastix TFM'''
 
-    #even though we are using literally the exact same transform the slicer one works better for some reason
-    #there are a number of 'defaults' in Slicer that are improving performance. Adjustments would take much too long
     #DirCheck(original_dir, asNifti_dir)
     print("Done!")
