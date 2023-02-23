@@ -28,16 +28,18 @@ def DCM2niix(data_dir):
         if not isExist:
             os.makedirs(nifti_folder)
         patient_subfolder_with_path = [f.path for f in os.scandir(list_subfolders_with_paths[i]) if f.is_dir()]
-        for j in range(len(patient_subfolder_with_path)):
+        for j in range(0, len(patient_subfolder_with_path)):
             # print(patient_subfolder_with_path[j].split('\\')[-1])
             patient_scanfiles_with_path = [f.path for f in os.scandir(patient_subfolder_with_path[j]) if f.is_dir()]
-            for l in range(len(patient_scanfiles_with_path)):
-                DCM2niix_i = [DCM2niix, '-o', nifti_folder, '-f',
-                                 patient_subfolder_with_path[j].split("\\")[-1] + "_" + str(l),
-                                 '-z', 'y', '-9',
-                                 patient_scanfiles_with_path[l]]
-                DCM2niix_execs.append(DCM2niix_i)
-                # print(patient_imagefiles_with_path[k])
+            patient_subfolder = patient_subfolder_with_path[j].split("\\")[-1]
+            if not os.path.exists(os.path.join(nifti_folder, f"{patient_subfolder}_0_CT.nii.gz")):
+                for l in range(len(patient_scanfiles_with_path)):
+                    DCM2niix_i = [DCM2niix, '-o', nifti_folder, '-f',
+                                     patient_subfolder_with_path[j].split("\\")[-1] + "_" + str(l),
+                                     '-z', 'y', '-9',
+                                     patient_scanfiles_with_path[l]]
+                    DCM2niix_execs.append(DCM2niix_i)
+                    # print(patient_imagefiles_with_path[k])
     with ThreadPoolExecutor(max_workers=5) as executor:
         results = [executor.submit(subprocess.call, exec) for exec in DCM2niix_execs]
         for f in results:
@@ -129,7 +131,7 @@ def DirCheck(first, second):
 
 
 if __name__ == '__main__':
-    data_dir = "D:\\Data\\CNH_Paired"
+    data_dir = "D:\\Data\\IFA"
     emptys = remove_empty_dirs(data_dir)
     print(f"{emptys} directories removed")
 
