@@ -47,6 +47,21 @@ Done with sitk or ITK
 
 '''
 
+def check_spacing(nifti_folder):
+    image_files = [f for f in os.listdir(nifti_folder) if f.endswith('.nii.gz')]
+    count = 0
+    for image_file in image_files:
+        image = sitk.ReadImage(os.path.join(nifti_folder, image_file))
+        spacing = image.GetSpacing()
+
+        if any(s > 3 for s in spacing):
+            print(f"Image {image_file} has a spacing greater than 3.")
+            os.remove(os.path.join(nifti_folder, image_file))
+            count += 1
+
+    print(f"A total of {count} images were removed due to poor large image slices (spacing)")
+    return 0
+
 def Resample(data_dir, nifti_folder):
     resampled_folder = os.path.join(data_dir, "Resampled")
     isExist = os.path.exists(resampled_folder)
@@ -59,9 +74,7 @@ def Resample(data_dir, nifti_folder):
     resampled.SetOutputSpacing(spacing)
 
     for filename in os.listdir(nifti_folder):
-        if filename.endswith("CT.nii.gz"):
-            continue
-        else:
+        if filename.endswith("T1.nii.gz"):
             image = sitk.ReadImage(os.path.join(nifti_folder, filename))
 
             size = [int(sz * spc) for sz, spc in zip(image.GetSize(), image.GetSpacing())]
@@ -70,12 +83,14 @@ def Resample(data_dir, nifti_folder):
             resampled.SetOutputOrigin(image.GetOrigin())
             resampled_image = resampled.Execute(image)
             sitk.WriteImage(resampled_image, os.path.join(resampled_folder, filename.split(".")[0] + "_resampled.nii.gz"))
+        else:
+            continue
 
     return resampled_folder
 
 
 def BiasCorrect(reoriented_dir):
-    B4corrected_folder = os.path.join(data_dir, "B4CorrectedMRI")
+    B4corrected_folder = os.path.join(data_dir, "B4CorrectedMR")
     isExist = os.path.exists(B4corrected_folder)
     if not isExist:
         os.makedirs(B4corrected_folder)
@@ -87,7 +102,7 @@ def BiasCorrect(reoriented_dir):
 
     for filename in os.listdir(reoriented_dir):
         n4.inputs.input_image = os.path.join(reoriented_dir, filename)
-        n4.inputs.output_image = os.path.join(B4corrected_folder, filename.split('.')[0] + "_N4.nii.gz")
+        n4.inputs.output_image = os.path.join(B4corrected_folder, filename.split('.')[0] + "_B4.nii.gz")
         n4_cmdline_list.append(n4.cmdline)
 
     n4_cmdline_exec = [i.replace('N4BiasFieldCorrection', n4_exe) for i in n4_cmdline_list]
@@ -227,13 +242,15 @@ if __name__ == '__main__':
     #skull_strip_dir = "D:\\Data\\CNH_Pair_Test\\skullStrippedMRIs"
     #flirt_dir = "D:\\Data\\CNH_Pair_Test\\toTemplateMRIs"
 
+    check_spacing(asNifti_dir)
     resample_dir = Resample(data_dir, asNifti_dir)
-    bias_dir = BiasCorrect(resample_dir)
+    BiasCorrect(resample_dir)
+
     #skull_strip_dir = SkullStrip(data_dir, bias_dir)
     #print("Run the skull stripping on T1 first, then press enter to continue with the alignment process...")
     #input("Press enter to continue!")
 
-    flirt_dir = TransformMRIs(data_dir, bias_dir)
+    #flirt_dir = TransformMRIs(data_dir, bias_dir)
 
     #TransformMasks(skull_strip_dir, flirt_dir)
     #DirCheck(original_dir, asNifti_dir)
