@@ -57,19 +57,25 @@ def CTtoMRregistration(ct_file, t1_file, seg_file, output_file, register_dir):
         RigidElastix.SetParameterMap(rigid_map)
         RigidElastix.Execute()
 
-        CT_to_T1_image = RigidElastix.GetResultImage()
         CT_to_T1_image_transform = RigidElastix.GetTransformParameterMap()[0]
+        CT_to_T1_image = RigidElastix.GetResultImage()
 
-        CTseg = sitk.ReadImage(seg_file)
-        CTseg_resampled = sitk.Resample(CTseg, CT_to_T1_image, CT_to_T1_image_transform, sitk.sitkNearestNeighbor, 0.0)
+        rigid_map['FinalBSplineInterpolationOrder'] = ['0']
+        RigidElastix.SetParameterMap(rigid_map)
+        RigidElastix.SetMovingImage(sitk.ReadImage(seg_file))
+        RigidElastix.Execute()
+
+        CTseg_resampled = RigidElastix.GetResultImage()
+        CTseg_resampled = sitk.Cast(CTseg_resampled, sitk.sitkInt16)
 
         sitk.WriteImage(CT_to_T1_image, os.path.join(register_dir, output_file + "_noBed_T1registered.nii.gz"))
         sitk.WriteParameterFile(CT_to_T1_image_transform, os.path.join(register_dir, output_file + "transform.txt"))
         sitk.WriteImage(CTseg_resampled, os.path.join(register_dir, output_file + "_seg_T1registered.nii.gz"))
+        sitk.WriteImage(CTseg_resampled, os.path.join(register_dir, output_file + "_seg_T1registered.nii.gz"))
 
     except RuntimeError as e:
         warnings.warn(str(e))
-    return
+    return 0
 
 
 def CTtoMR_Def_registration(ct_file, t1_file, output_file, register_dir):
@@ -198,7 +204,7 @@ if __name__ == '__main__':
     data_dir = "D:\\Data\\CNH_Paired"
     NoBedCTs_dir = os.path.join(data_dir, "NoBedCTs")
     Seg_dir = os.path.join(data_dir, "nbCTsegs")
-    MRIs = os.path.join(data_dir, "B4CorrectedMRI_OG")
+    MRIs = os.path.join(data_dir, "B4CorrectedMR")
     #label_dir = os.path.join(data_dir, "nbCTsegs_T1Reg_RO")
 
     #MRItotemplate_dir = os.path.join(data_dir, "toTemplateMRIs")
