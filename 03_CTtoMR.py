@@ -60,6 +60,14 @@ def CTtoMRregistration(ct_file, t1_file, seg_file, output_file, register_dir):
         CT_to_T1_image_transform = RigidElastix.GetTransformParameterMap()[0]
         CT_to_T1_image = RigidElastix.GetResultImage()
 
+        #CT values are 0 where not aligned, address with intensity shift
+        CT_to_T1_array = sitk.GetArrayFromImage(CT_to_T1_image)
+        CT_to_T1_array[CT_to_T1_array == 0] = -1024
+        CT_to_T1_array = sitk.GetImageFromArray(CT_to_T1_array)
+
+        CT_to_T1_array.SetOrigin(CT_to_T1_image.GetOrigin())
+        CT_to_T1_array.SetDirection(CT_to_T1_image.GetDirection())
+
         rigid_map['FinalBSplineInterpolationOrder'] = ['0']
         RigidElastix.SetParameterMap(rigid_map)
         RigidElastix.SetMovingImage(sitk.ReadImage(seg_file))
@@ -68,7 +76,8 @@ def CTtoMRregistration(ct_file, t1_file, seg_file, output_file, register_dir):
         CTseg_resampled = RigidElastix.GetResultImage()
         CTseg_resampled = sitk.Cast(CTseg_resampled, sitk.sitkInt16)
 
-        sitk.WriteImage(CT_to_T1_image, os.path.join(register_dir, output_file + "_noBed_T1registered.nii.gz"))
+
+        sitk.WriteImage(CT_to_T1_array, os.path.join(register_dir, output_file + "_noBed_T1registered.nii.gz"))
         sitk.WriteParameterFile(CT_to_T1_image_transform, os.path.join(register_dir, output_file + "transform.txt"))
         sitk.WriteImage(CTseg_resampled, os.path.join(register_dir, output_file + "_seg_T1registered.nii.gz"))
         sitk.WriteImage(CTseg_resampled, os.path.join(register_dir, output_file + "_seg_T1registered.nii.gz"))
