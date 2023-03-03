@@ -73,14 +73,14 @@ def CTtoMRregistration(ct_file, t1_file, seg_file, output_file, register_dir):
         RigidElastix.SetMovingImage(sitk.ReadImage(seg_file))
         RigidElastix.Execute()
 
+        #seg is not aligned with CT, consider label/200 hu mask alignment
         CTseg_resampled = RigidElastix.GetResultImage()
         CTseg_resampled = sitk.Cast(CTseg_resampled, sitk.sitkInt16)
 
 
         sitk.WriteImage(CT_to_T1_array, os.path.join(register_dir, output_file + "_noBed_T1registered.nii.gz"))
-        sitk.WriteParameterFile(CT_to_T1_image_transform, os.path.join(register_dir, output_file + "transform.txt"))
-        sitk.WriteImage(CTseg_resampled, os.path.join(register_dir, output_file + "_seg_T1registered.nii.gz"))
-        sitk.WriteImage(CTseg_resampled, os.path.join(register_dir, output_file + "_seg_T1registered.nii.gz"))
+        #sitk.WriteParameterFile(CT_to_T1_image_transform, os.path.join(register_dir, output_file + "transform.txt"))
+        #sitk.WriteImage(CTseg_resampled, os.path.join(register_dir, output_file + "_seg_T1registered.nii.gz"))
 
     except RuntimeError as e:
         warnings.warn(str(e))
