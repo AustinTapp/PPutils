@@ -33,7 +33,7 @@ def InitialRigid(ct_file, t1_file):
 
     return initial_registered_ct_image
 
-def CTtoMRregistrationOld(ct_file, t1_file, seg_file, output_file, register_dir):
+def CTtoMRregistration(ct_file, t1_file, seg_file, output_file, register_dir):
     try:
         #aligned_ct = InitialRigid(ct_file, t1_file)
 
@@ -206,7 +206,7 @@ def to_binary(seg_dir):
     return 0
 
 
-def CTtoMRregistration(ct_file, t1_file, seg_file, output_file, register_dir):
+def CTtoMRregistrationOld(ct_file, t1_file, seg_file, output_file, register_dir):
     try:
         t1_file = sitk.ReadImage(t1_file)
         ct_file = sitk.ReadImage(ct_file)
