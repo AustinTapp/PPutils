@@ -7,8 +7,8 @@ import numpy as np
 
 def InitialRigid(ct_file, t1_file):
     initial_registered_ct_image = None
-    mri = sitk.ReadImage(t1_file)
-    ct = sitk.ReadImage(ct_file)
+    mri = t1_file
+    ct = ct_file
 
     size = mri.GetSize()
     origin = mri.GetOrigin()
@@ -33,8 +33,7 @@ def InitialRigid(ct_file, t1_file):
 
     return initial_registered_ct_image
 
-
-def CTtoMRregistration(ct_file, t1_file, seg_file, output_file, register_dir):
+def CTtoMRregistrationOld(ct_file, t1_file, seg_file, output_file, register_dir):
     try:
         #aligned_ct = InitialRigid(ct_file, t1_file)
 
@@ -63,10 +62,10 @@ def CTtoMRregistration(ct_file, t1_file, seg_file, output_file, register_dir):
         #CT values are 0 where not aligned, address with intensity shift
         CT_to_T1_array = sitk.GetArrayFromImage(CT_to_T1_image)
         CT_to_T1_array[CT_to_T1_array == 0] = -1024
-        CT_to_T1_array = sitk.GetImageFromArray(CT_to_T1_array)
+        CT_to_T1_array2im = sitk.GetImageFromArray(CT_to_T1_array)
 
-        CT_to_T1_array.SetOrigin(CT_to_T1_image.GetOrigin())
-        CT_to_T1_array.SetDirection(CT_to_T1_image.GetDirection())
+        CT_to_T1_array2im.SetOrigin(CT_to_T1_image.GetOrigin())
+        CT_to_T1_array2im.SetDirection(CT_to_T1_image.GetDirection())
 
         rigid_map['FinalBSplineInterpolationOrder'] = ['0']
         RigidElastix.SetParameterMap(rigid_map)
@@ -77,10 +76,9 @@ def CTtoMRregistration(ct_file, t1_file, seg_file, output_file, register_dir):
         CTseg_resampled = RigidElastix.GetResultImage()
         CTseg_resampled = sitk.Cast(CTseg_resampled, sitk.sitkInt16)
 
-
-        sitk.WriteImage(CT_to_T1_array, os.path.join(register_dir, output_file + "_noBed_T1registered.nii.gz"))
-        #sitk.WriteParameterFile(CT_to_T1_image_transform, os.path.join(register_dir, output_file + "transform.txt"))
-        #sitk.WriteImage(CTseg_resampled, os.path.join(register_dir, output_file + "_seg_T1registered.nii.gz"))
+        sitk.WriteImage(CT_to_T1_array2im, os.path.join(register_dir, output_file + "_noBed_T1registered.nii.gz"))
+        sitk.WriteParameterFile(CT_to_T1_image_transform, os.path.join(register_dir, output_file + "transform.txt"))
+        sitk.WriteImage(CTseg_resampled, os.path.join(register_dir, output_file + "_seg_T1registered.nii.gz"))
 
     except RuntimeError as e:
         warnings.warn(str(e))
@@ -205,8 +203,61 @@ def to_binary(seg_dir):
         seg_img = sitk.ReadImage(os.path.join(seg_dir, segmentation))
         filled_img = sitk.BinaryThreshold(seg_img, 1, 7, 1, 0)
         sitk.WriteImage(filled_img, os.path.join(clean_folder, segmentation.split("_")[0] + "_binary.nii.gz"))
-
     return 0
+
+
+def CTtoMRregistration(ct_file, t1_file, seg_file, output_file, register_dir):
+    try:
+        t1_file = sitk.ReadImage(t1_file)
+        ct_file = sitk.ReadImage(ct_file)
+        seg_file = sitk.ReadImage(seg_file)
+
+        ct_file = InitialRigid(ct_file, t1_file)
+        seg_file = InitialRigid(seg_file, ct_file)
+
+        fixed_image = t1_file
+        moving_image = ct_file
+        seg_image = seg_file
+
+        initial_transform = sitk.CenteredTransformInitializer(fixed_image,
+                                                              moving_image,
+                                                              sitk.Euler3DTransform(),
+                                                              sitk.CenteredTransformInitializerFilter.GEOMETRY)
+
+        rigidNoshear = sitk.ImageRegistrationMethod()
+        rigidNoshear.SetMetricAsMattesMutualInformation(numberOfHistogramBins=32)
+        rigidNoshear.SetMetricSamplingStrategy(rigidNoshear.RANDOM)
+        rigidNoshear.SetMetricSamplingPercentage(0.01)
+        rigidNoshear.SetOptimizerAsGradientDescent(learningRate=1.0, convergenceMinimumValue=1e-6,
+                                                   numberOfIterations=1000, convergenceWindowSize=10)
+        rigidNoshear.SetOptimizerScalesFromPhysicalShift()
+
+        rigidNoshear.SetShrinkFactorsPerLevel(shrinkFactors = [4,2,1])
+        rigidNoshear.SetSmoothingSigmasPerLevel(smoothingSigmas=[2,1,0])
+        rigidNoshear.SmoothingSigmasAreSpecifiedInPhysicalUnitsOn()
+
+        #rigidNoshear.SetRotation((rx, ry, rz))
+        #rigidNoshear.SetTranslation((tx, ty, tz))
+        #rigidNoshear.SetScale((1.0, 1.0, 1.0))
+
+        optimized_transform = sitk.Euler3DTransform()
+        rigidNoshear.SetMovingInitialTransform(initial_transform)
+        rigidNoshear.SetInitialTransform(optimized_transform, inPlace=False)
+
+        rigidNoshear.SetInterpolator(sitk.sitkBSplineResamplerOrder3)
+        CTtoMR_tfm = rigidNoshear.Execute(fixed_image, moving_image)
+
+        CTtoMR = sitk.Resample(moving_image, fixed_image, CTtoMR_tfm, sitk.sitkLinear, 0.0, moving_image.GetPixelID())
+        CTseg = sitk.Resample(seg_image, fixed_image, CTtoMR_tfm, sitk.sitkNearestNeighbor, 0.0, seg_image.GetPixelID())
+
+        sitk.WriteImage(CTtoMR, os.path.join(register_dir, output_file + "_noBed_T1registered.nii.gz"))
+        sitk.WriteTransform(CTtoMR_tfm, os.path.join(register_dir, output_file + "transform.txt"))
+        sitk.WriteImage(CTseg, os.path.join(register_dir, output_file + "_seg_T1registered.nii.gz"))
+
+    except RuntimeError as e:
+        warnings.warn(str(e))
+    return 0
+
 
 if __name__ == '__main__':
 
@@ -215,15 +266,13 @@ if __name__ == '__main__':
     Seg_dir = os.path.join(data_dir, "nbCTsegs")
     MRIs = os.path.join(data_dir, "B4CorrectedMR")
     #label_dir = os.path.join(data_dir, "nbCTsegs_T1Reg_RO")
-
     #MRItotemplate_dir = os.path.join(data_dir, "toTemplateMRIs")
 
-    #to the template registered MRI
     toMRI = CTtoT1(NoBedCTs_dir, MRIs, Seg_dir, data_dir)
-
     #ctRO = CTtoOriginReset(CTtoT1s, NoBedCTs_dir)
     #CTsegToCTT1(CTtoT1s, label_dir)
 
+    '''Functions below are under construction'''
     #labelcleanup(label_dir)
     #to_binary(label_dir)
     #DirCheck(original_dir, asNifti_dir)

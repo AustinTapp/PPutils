@@ -117,7 +117,7 @@ def BiasCorrect(reoriented_dir):
 
 
 #skull strip was removed because downstream CT to T1 registration suffered
-'''def SkullStrip(data_dir, bias_corrected):
+def SkullStrip(data_dir, bias_corrected):
     skull_stripped_dir = os.path.join(data_dir, "skullStrippedMRIs")
     isExist = os.path.exists(skull_stripped_dir)
     if not isExist:
@@ -143,7 +143,7 @@ def BiasCorrect(reoriented_dir):
         for command in SS_cme:
             f.write(f'{command} \n')
 
-    return skull_stripped_dir'''
+    return skull_stripped_dir
 
 
 def TransformMRIs(data_dir, bias_dir):
@@ -237,7 +237,6 @@ def DirCheck(first, second):
 if __name__ == '__main__':
     data_dir = "D:\\Data\\CNH_Paired"
     asNifti_dir = "D:\\Data\\CNH_Paired\\asNifti"
-
     #bias_dir = "D:\\Data\\CNH_Pair_Test\\B4CorrectedMRI"
     #skull_strip_dir = "D:\\Data\\CNH_Pair_Test\\skullStrippedMRIs"
     #flirt_dir = "D:\\Data\\CNH_Pair_Test\\toTemplateMRIs"
@@ -245,13 +244,11 @@ if __name__ == '__main__':
     check_spacing(asNifti_dir)
     resample_dir = Resample(data_dir, asNifti_dir)
     BiasCorrect(resample_dir)
-
     #skull_strip_dir = SkullStrip(data_dir, bias_dir)
     #print("Run the skull stripping on T1 first, then press enter to continue with the alignment process...")
     #input("Press enter to continue!")
-
     #flirt_dir = TransformMRIs(data_dir, bias_dir)
-
     #TransformMasks(skull_strip_dir, flirt_dir)
     #DirCheck(original_dir, asNifti_dir)
+
     print("Done!")

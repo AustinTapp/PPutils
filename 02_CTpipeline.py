@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 #should be run AFTER PPall pipeline
 #takes longer, so should be run third while MRI pipeline works on linux
 
-def ReorientToITK(data_dir):
+def Reorient(data_dir):
     reoriented_folder = os.path.join(data_dir, "Reoriented")
     isExist = os.path.exists(reoriented_folder)
     if not isExist:
@@ -103,7 +103,7 @@ def DirCheck(first, second):
 if __name__ == '__main__':
     data_dir = "D:\\Data\\CNH_Paired"
 
-    reoriented_folder = ReorientToITK(data_dir)
+    reoriented_folder = Reorient(data_dir)
     BedRemoval(data_dir, reoriented_folder)
 
     #DirCheck(original_dir, asNifti_dir)
