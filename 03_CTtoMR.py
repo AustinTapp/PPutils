@@ -261,7 +261,7 @@ def CTtoMRregistrationOld(ct_file, t1_file, seg_file, output_file, register_dir)
 
 if __name__ == '__main__':
 
-    data_dir = "D:\\Data\\CNH_Paired"
+    data_dir = "E:\\Data\\CNH_Paired"
     NoBedCTs_dir = os.path.join(data_dir, "NoBedCTs")
     Seg_dir = os.path.join(data_dir, "nbCTsegs")
     MRIs = os.path.join(data_dir, "B4CorrectedMR")

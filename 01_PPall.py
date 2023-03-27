@@ -131,7 +131,7 @@ def DirCheck(first, second):
 
 
 if __name__ == '__main__':
-    data_dir = "D:\\IFA"
+    data_dir = "E:\\Data\\CNH_Paired"
     emptys = remove_empty_dirs(data_dir)
     print(f"{emptys} directories removed")
 

@@ -101,7 +101,7 @@ def DirCheck(first, second):
 
 
 if __name__ == '__main__':
-    data_dir = "D:\\Data\\CNH_Paired"
+    data_dir = "E:\\Data\\CNH_Paired"
 
     reoriented_folder = Reorient(data_dir)
     BedRemoval(data_dir, reoriented_folder)

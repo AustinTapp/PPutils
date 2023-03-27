@@ -59,7 +59,7 @@ def check_spacing(nifti_folder):
             os.remove(os.path.join(nifti_folder, image_file))
             count += 1
 
-    print(f"A total of {count} images were removed due to poor large image slices (spacing)")
+    print(f"A total of {count} images were removed due to large image spacing, i.e. low quality.")
     return 0
 
 def Resample(data_dir, nifti_folder):
@@ -235,8 +235,8 @@ def DirCheck(first, second):
 
 
 if __name__ == '__main__':
-    data_dir = "D:\\Data\\CNH_Paired"
-    asNifti_dir = "D:\\Data\\CNH_Paired\\asNifti"
+    data_dir = "E:\\Data\\CNH_Paired"
+    asNifti_dir = "E:\\Data\\CNH_Paired\\asNifti"
     #bias_dir = "D:\\Data\\CNH_Pair_Test\\B4CorrectedMRI"
     #skull_strip_dir = "D:\\Data\\CNH_Pair_Test\\skullStrippedMRIs"
     #flirt_dir = "D:\\Data\\CNH_Pair_Test\\toTemplateMRIs"
