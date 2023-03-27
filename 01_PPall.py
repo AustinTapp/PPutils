@@ -32,7 +32,7 @@ def DCM2niix(data_dir):
             # print(patient_subfolder_with_path[j].split('\\')[-1])
             patient_scanfiles_with_path = [f.path for f in os.scandir(patient_subfolder_with_path[j]) if f.is_dir()]
             patient_subfolder = patient_subfolder_with_path[j].split("\\")[-1]
-            if not os.path.exists(os.path.join(nifti_folder, f"{patient_subfolder}_0_CT.nii.gz")):
+            if not os.path.exists(os.path.join(nifti_folder, f"{patient_subfolder}_CT.nii.gz")):
                 for l in range(len(patient_scanfiles_with_path)):
                     DCM2niix_i = [DCM2niix, '-o', nifti_folder, '-f',
                                      patient_subfolder_with_path[j].split("\\")[-1] + "_" + str(l),
@@ -131,7 +131,7 @@ def DirCheck(first, second):
 
 
 if __name__ == '__main__':
-    data_dir = "D:\\Data\\CNH_Paired"
+    data_dir = "D:\\IFA"
     emptys = remove_empty_dirs(data_dir)
     print(f"{emptys} directories removed")
 
