@@ -4,6 +4,40 @@ import json
 import shutil
 from concurrent.futures import ThreadPoolExecutor
 
+
+def split(path):
+
+    image_folder = os.path.join(data_dir, "DCMs")
+    isExist = os.path.exists(image_folder)
+    if not isExist:
+        os.makedirs(image_folder)
+
+    seg_folder = os.path.join(data_dir, "Segments")
+    isExist = os.path.exists(seg_folder)
+    if not isExist:
+        os.makedirs(seg_folder)
+
+    list_subfolders_with_paths = [f.path for f in os.scandir(path) if f.is_dir()]
+    for i in range(len(list_subfolders_with_paths)):
+        patient_subfolder_with_path = [f.path for f in os.scandir(list_subfolders_with_paths[i]) if f.is_dir()]
+        for j in range(0, len(patient_subfolder_with_path)):
+            folder_name = patient_subfolder_with_path[j].split("\\")[-2].split("-")[-1]
+            # print(patient_subfolder_with_path[j].split('\\')[-1])
+            patient_scanfiles_with_path = [f.path for f in os.scandir(patient_subfolder_with_path[j]) if f.is_dir()]
+            for l in range(len(patient_scanfiles_with_path)):
+                old_name = patient_scanfiles_with_path[l].split("\\")[-1]
+                if "RTSTRUCT" in old_name:
+                    shutil.move(patient_scanfiles_with_path[l], seg_folder)
+                    os.rename(os.path.join(seg_folder, old_name), os.path.join(seg_folder, folder_name))
+                elif "NA" in old_name:
+                    shutil.move(patient_scanfiles_with_path[l], seg_folder)
+                    os.rename(os.path.join(seg_folder, old_name), os.path.join(seg_folder, folder_name))
+                else:
+                    shutil.move(patient_scanfiles_with_path[l], image_folder)
+                    os.rename(os.path.join(image_folder, old_name), os.path.join(image_folder, folder_name))
+    return image_folder
+
+
 def remove_empty_dirs(path):
     count = 0
     for dir_entry in os.scandir(path):
@@ -16,35 +50,37 @@ def remove_empty_dirs(path):
 
 
 def DCM2niix(data_dir):
-    list_subfolders_with_paths = [f.path for f in os.scandir(data_dir) if f.is_dir()]
-    DCM2niix = "C:\\Users\\Austin Tapp\\Documents\\ImagePreProcessUtils\\dcm2niix\\build\\install\\bin\\dcm2niix.exe"
-
+    DCM2niix_exe = "C:\\Users\\Austin Tapp\\Documents\\ImagePreProcessUtils\\dcm2niix\\build\\install\\bin\\dcm2niix.exe"
     DCM2niix_execs = []
+    DCM2niix_i = None
 
-    for i in range(len(list_subfolders_with_paths)):
-        nifti_folder = os.path.join(data_dir, "asNifti")
-        # print(nifti_folder)
-        isExist = os.path.exists(nifti_folder)
-        if not isExist:
-            os.makedirs(nifti_folder)
-        patient_subfolder_with_path = [f.path for f in os.scandir(list_subfolders_with_paths[i]) if f.is_dir()]
-        for j in range(0, len(patient_subfolder_with_path)):
+    nifti_folder = os.path.join(data_dir, "asNifti")
+    isExist = os.path.exists(nifti_folder)
+    if not isExist:
+        os.makedirs(nifti_folder)
+
+    upper_paths = [f.path for f in os.scandir(data_dir) if f.is_dir()]
+
+    for h in range(len(upper_paths)):
+        list_subfolders_with_paths = [f.path for f in os.scandir(upper_paths[h]) if f.is_dir()]
+        #for i in range(len(list_subfolders_with_paths)):
+            #patient_subfolder_with_path = [f.path for f in os.scandir(list_subfolders_with_paths[i]) if f.is_dir()]
+        for j in range(0, len(list_subfolders_with_paths)):
             # print(patient_subfolder_with_path[j].split('\\')[-1])
-            patient_scanfiles_with_path = [f.path for f in os.scandir(patient_subfolder_with_path[j]) if f.is_dir()]
-            patient_subfolder = patient_subfolder_with_path[j].split("\\")[-1]
-            if not os.path.exists(os.path.join(nifti_folder, f"{patient_subfolder}_CT.nii.gz")):
-                for l in range(len(patient_scanfiles_with_path)):
-                    DCM2niix_i = [DCM2niix, '-o', nifti_folder, '-f',
-                                     patient_subfolder_with_path[j].split("\\")[-1] + "_" + str(l),
-                                     '-z', 'y', '-6',
-                                     patient_scanfiles_with_path[l]]
-                    DCM2niix_execs.append(DCM2niix_i)
-                    # print(patient_imagefiles_with_path[k])
-    with ThreadPoolExecutor(max_workers=5) as executor:
+            #patient_scanfiles_with_path = [f.path for f in os.scandir(list_subfolders_with_paths[j]) if f.is_dir()]
+            patient_subfolder = list_subfolders_with_paths[j].split("\\")[-2]
+            DCM2niix_i = [DCM2niix_exe, '-o', nifti_folder, '-f',
+                          patient_subfolder,
+                          '-z', 'y', '-6',
+                          list_subfolders_with_paths[j]]
+            DCM2niix_execs.append(DCM2niix_i)
+            # for l in range(len(patient_scanfiles_with_path)):
+            #if not os.path.exists(os.path.join(nifti_folder, f"{patient_subfolder}_CT.nii.gz")):
+                # print(patient_imagefiles_with_path[k])
+    with ThreadPoolExecutor(max_workers=10) as executor:
         results = [executor.submit(subprocess.call, exec) for exec in DCM2niix_execs]
         for f in results:
             f.result()
-
     return nifti_folder
 
 
@@ -122,8 +158,6 @@ def DirCheck(first, second):
     firstfiles = os.listdir(first)
     secondfiles = os.listdir(second)
     for file in secondfiles:
-        file = file.split("_")[0]
-        #if 'CT' in file:
         if file not in firstfiles:
             print(file)
             count += 1
@@ -131,12 +165,13 @@ def DirCheck(first, second):
 
 
 if __name__ == '__main__':
-    data_dir = "E:\\Data\\CNH_Paired"
-    emptys = remove_empty_dirs(data_dir)
-    print(f"{emptys} directories removed")
+    data_dir = "E:\\Data\\IFA\\IFA_data\\PRS\\AnielDicoms"
+    #split(data_dir)
+    #emptys = remove_empty_dirs(data_dir)
+    #print(f"{emptys} directories removed")
 
     asNifti_dir = DCM2niix(data_dir)
     rename(asNifti_dir)
     cleanup(asNifti_dir)
-    #DirCheck(original_dir, asNifti_dir)
+    #DirCheck(all_dir, data_dir)
     print("Done!")

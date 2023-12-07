@@ -148,7 +148,7 @@ def DirCheck(first, second):
 if __name__ == '__main__':
     data_dir = "D:\\Data\\CNH_Paired"
     # original_dir = "D:\\Data\\CNH_Paired\\Normal"
-    # nifti_folder = "D:\\Data\\CNH_Paired\\asNifti"
+    nifti_folder = "D:\\Data\\CNH_Paired\\asNifti"
     # reoriented_dir = "D:\\Data\\CNH_Paired\\Reoriented"
     # noBed_dir = "D:\\Data\\CNH_Paired\\NoBedCTs"
 
