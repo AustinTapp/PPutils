@@ -20,21 +20,15 @@ def process_folder(dir, d_type, endian):
         folder_path = os.path.join(dir, folder)
         for file in ['Baseline', 'Target']:
             file_path = os.path.join(folder_path, file)
+            for image_file in os.listdir(file_path):
+                image_path = os.path.join(file_path, image_file)
+                if os.path.isfile(image_path):
+                    image_name = image_path.split("\\")[-1].split("_")
+                    name = image_name[1] + "_" + image_name[3] + "_" + image_name[2] + ".nii.gz"
+                    output = os.path.join("E:\\Data\\CT_MAR\\asNifti" , name)
 
-            if os.path.exists(file_path) and os.path.isdir(file_path):
-                output_folder = os.path.join(file_path, "as_nifti")
-                if not os.path.exists(output_folder):
-                    os.makedirs(output_folder)
-
-                for image_file in os.listdir(file_path):
-                    image_path = os.path.join(file_path, image_file)
-                    if os.path.isfile(image_path):
-                        image_name = image_path.split("\\")[-1].split("_")
-                        name = image_name[3] + "_" + image_name[2] + ".nii.gz"
-                        output = os.path.join(file_path, "as_nifti", name)
-
-                        width, height = (900, 1000) if 'sino' in image_file else (512, 512)
-                        convert(image_path, width, height, d_type, endian, output)
+                    width, height = (900, 1000) if 'sino' in image_file else (512, 512)
+                    convert(image_path, width, height, d_type, endian, output)
 
 
 if __name__ == '__main__':
