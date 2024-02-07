@@ -14,6 +14,7 @@ def rescale_intensity_to_reference(input, reference):
     return rescaled_array
 
 def toTemplateRegistration(images, template, new_dir):
+    T1_file = None
     try:
         files = [f for f in os.listdir(images) if f.endswith('nii.gz')]
         for file in files:
@@ -96,8 +97,8 @@ def AlignToTemplate(data_dir, new_dir, template):
 
 
 if __name__ == '__main__':
-    data_dir = "E:\\Data\\Brain\\CNseg\\Segmentations"
-    new_dir = "E:\\Data\\Brain\\CNseg\\CoReg"
+    data_dir = "E:\\Data\\Brain\\CNseg\\Test"
+    new_dir = "E:\\Data\\Brain\\CNseg\\Test\\CoRegTest"
     template = "C:\\Users\Austin Tapp\\Documents\\ImagePreProcessUtils\\PPutils\\ReferenceMRIs\\ICBM_T1_MRI_template.nii"
 
     AlignToTemplate(data_dir, new_dir, template)

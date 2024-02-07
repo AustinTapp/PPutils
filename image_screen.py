@@ -125,15 +125,12 @@ def pixel_spacing(directory):
     spacing_z = []
 
     for file in files:
-        if 'T1' in file:
-            file_path = os.path.join(directory, file)
-            image = sitk.ReadImage(file_path)
-            spacing = image.GetSpacing()
-            spacing_x.append(spacing[0])
-            spacing_y.append(spacing[1])
-            spacing_z.append(spacing[2])
-        else:
-            continue
+        file_path = os.path.join(directory, file)
+        image = sitk.ReadImage(file_path)
+        spacing = image.GetSpacing()
+        spacing_x.append(spacing[0])
+        spacing_y.append(spacing[1])
+        spacing_z.append(spacing[2])
 
     spacing_x_mean = np.mean(spacing_x)
     spacing_x_std = np.std(spacing_x)
@@ -150,7 +147,7 @@ def pixel_spacing(directory):
 
 if __name__ == '__main__':
     # Specify the directory containing the volumes
-    directory = "E:\\Data\\CNH_Paired\\asNifti"
+    directory = "E:\\Data\\FlyWheel\\Uganda_Matches\\SelectCoReg\\LF"
 
     spacing = pixel_spacing(directory)
     print(spacing)
